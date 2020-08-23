@@ -10,6 +10,7 @@ struct thread_t {
   // spin up a new thread to execute the run method
   void start() {
     if (!_thread) {
+      _active = true;
       _thread.reset(new std::thread(trampoline, this));
     }
   }
@@ -24,7 +25,9 @@ struct thread_t {
     }
   }
 
-  bool active() const { return _active; }
+  bool active() const {
+    return _active;
+  }
 
   virtual void run() = 0;
 

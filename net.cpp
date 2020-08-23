@@ -55,7 +55,7 @@ struct net_client_impl_t : public net_client_t {
   net_client_impl_t()
     : _socket(INVALID_SOCKET) {
     _last_ticks = get_ticks();
-    _interval = 0;
+    _interval = target_interval;
   }
 
   bool connect(const uint8_t ip[4], const uint16_t port) override {
@@ -108,11 +108,16 @@ protected:
   }
 
   static const uint64_t max_interval = 1000 / 30;
+  static const uint64_t target_interval = 1000 / 20;
 
+  // connection between client and relay
   socket_t _socket;
   std::unique_ptr<net_socket_t> _net_sock;
 
+  // the last time we received a tick message
   uint64_t _last_ticks;
+  // the last interval between tick messages
+  // XXX: filter this value
   uint64_t _interval;
 
 }; // struct net_impl_t

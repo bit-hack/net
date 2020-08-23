@@ -187,7 +187,64 @@ uint32_t sock_select(socket_t *sockets, size_t num) {
 }
 
 // open a listen socket
-socket_t sock_listen(uint16_t port) { return sock_invalid; }
+socket_t sock_listen(uint16_t port) {
+  // ensure sock library is opened
+  if (!winsock_init()) {
+    return sock_invalid;
+  }
+  // create a socket
+  SOCKET sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (sock == INVALID_SOCKET) {
+    return sock_invalid;
+  }
+  // set this socket to be non blocking
+  u_long non_blocking = 1;
+  ioctlsocket(sock, FIONBIO, &non_blocking);
+  // set inet address
+  sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_addr.S_un.S_addr = INADDR_ANY;
+  addr.sin_port = htons(port);
+  // bind listen socket to this addr
+  if (int err = ::bind(sock, (const sockaddr *)&addr, sizeof(addr))) {
+    (void)err;
+    ::closesocket(sock);
+    return sock_invalid;
+  }
+  // set the socket to listen for incomming connections
+  if (int err = ::listen(sock, 8)) {
+    (void)err;
+    ::closesocket(sock);
+    return sock_invalid;
+  }
+  // success
+  ++gSockIndex;
+  assert(gSockMap.find(gSockIndex) == gSockMap.end());
+  gSockMap.insert(
+      std::pair<socket_t, sock_info_t>(gSockIndex, sock_info_t{sock}));
+  // return socket handle
+  return gSockIndex;
+}
 
 // accept an incomming socket connection
-socket_t sock_accept(socket_t) { return sock_invalid; }
+socket_t sock_accept(socket_t sock) {
+  auto itt = gSockMap.find(sock);
+  if (itt == gSockMap.end()) {
+    return sock_invalid;
+  }
+  // try to accept a connection
+  sockaddr addr;
+  int addr_len = sizeof(addr);
+  SOCKET s = ::accept(itt->second._hsock, &addr, &addr_len);
+  if (s == INVALID_SOCKET) {
+    return sock_invalid;
+  }
+  // success
+  ++gSockIndex;
+  assert(gSockMap.find(gSockIndex) == gSockMap.end());
+  gSockMap.insert(
+      std::pair<socket_t, sock_info_t>(gSockIndex, sock_info_t{s}));
+  // return socket handle
+  return gSockIndex;
+}

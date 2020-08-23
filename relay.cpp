@@ -87,10 +87,10 @@ struct net_relay_impl_t : public net_relay_t, private thread_t {
   // thread function
   virtual void run() {
     // send out new tick messages when needed
-    while ((get_ticks() - _old_ticks) >= _tick_interval) {
-      _old_ticks += _tick_interval;
-      send_tick();
-    }
+//    while ((get_ticks() - _old_ticks) >= _tick_interval) {
+//      _old_ticks += _tick_interval;
+//      send_tick();
+//    }
     // try to accept any new clients
     if (_can_accept) {
       if (!clients_accept()) {
@@ -111,9 +111,6 @@ struct net_relay_impl_t : public net_relay_t, private thread_t {
 
   // poll for new clients
   bool clients_accept() {
-    if (!sock_accept(_listen_sock)) {
-      return false;
-    }
     while (sock_select(&_listen_sock, 1)) {
       socket_t client = sock_accept(_listen_sock);
       client_add(client);
@@ -123,6 +120,7 @@ struct net_relay_impl_t : public net_relay_t, private thread_t {
 
   // add a new client
   void client_add(socket_t client) {
+    printf("new client connected!\n");
     assert(client != sock_invalid);
     _clients.push_back(net_client_info_t{client, ++_next_uuid});
 

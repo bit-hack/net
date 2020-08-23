@@ -5,6 +5,7 @@
 #include "net.h"
 #include "relay.h"
 
+
 int main(int argc, char **args) {
   using namespace net;
 
@@ -27,6 +28,12 @@ int main(int argc, char **args) {
   const uint8_t ip[] = {127, 0, 0, 1};
   if (!client->connect(ip, default_port)) {
     return 1;
+  }
+
+  // do something
+  for (int i=0; i < 10; ++i) {
+    Sleep(1000);
+    printf(".");
   }
 
   return 0;
